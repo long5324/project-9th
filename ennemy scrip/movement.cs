@@ -1,23 +1,33 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
+using Unity.Mathematics;
 using UnityEditor.Tilemaps;
 using UnityEngine;
 using UnityEngine.InputSystem;
 public class movement : MonoBehaviour
 {
+
     [SerializeField] LayerMask ground_check;
     [SerializeField] Vector2 size_boxcast;
     [SerializeField] float speed_movement = 4, focre_jum = 10, casDistance, time_wait_jum = 0.3f;
-   public  Rigidbody2D e_rigd { get; set; }
+   
+    public  Rigidbody2D e_rigd { get; set; }
     public float Horizontal { get; set; }
     bool facelook=true,can_jum=true;
+    float speed_move_if_attack;
+    attack enemy_attack;
     void Start()
     {
+        enemy_attack = GetComponent<attack>();
+        speed_move_if_attack = speed_movement*0.5f;
         e_rigd = GetComponent<Rigidbody2D>();
     }
     private void Update()
     {
-        e_rigd.velocity = new Vector2(Horizontal * speed_movement, e_rigd.velocity.y);
+
+        if (enemy_attack.is_hit) { e_rigd.velocity = new Vector2(Horizontal * speed_move_if_attack, e_rigd.velocity.y); }
+          else  e_rigd.velocity = new Vector2(Horizontal * speed_movement, e_rigd.velocity.y);
         if (Horizontal > 0 && !facelook)
             flip();
         else if (Horizontal < 0 && facelook)
@@ -26,8 +36,8 @@ public class movement : MonoBehaviour
     // Update is called once per frame
     public void Move(InputAction.CallbackContext context)
     {
+            Horizontal = context.action.ReadValue<Vector2>().x;
         
-        Horizontal = context.action.ReadValue<Vector2>().x;
     }
     public void Jum(InputAction.CallbackContext context)
     {
@@ -40,9 +50,9 @@ public class movement : MonoBehaviour
     }
     private void flip()
     {
-        Vector2 Scale =  transform.localScale;
-        Scale.x *= -1;
-        transform.localScale = Scale;
+        Vector2 scale = transform.localScale;
+        scale.x *= -1;
+        transform.localScale = scale;
         facelook = !facelook;
     }
     public bool groundCheck()
