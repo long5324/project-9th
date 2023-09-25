@@ -20,7 +20,7 @@ public class movement : MonoBehaviour
     void Start()
     {
         enemy_attack = GetComponent<attack>();
-        speed_move_if_attack = speed_movement*0.5f;
+        speed_move_if_attack = speed_movement*0f;
         e_rigd = GetComponent<Rigidbody2D>();
     }
     private void Update()
@@ -32,6 +32,10 @@ public class movement : MonoBehaviour
             flip();
         else if (Horizontal < 0 && facelook)
             flip();
+    }
+    private void FixedUpdate()
+    {
+        jum_gravity();
     }
     // Update is called once per frame
     public void Move(InputAction.CallbackContext context)
@@ -71,5 +75,16 @@ public class movement : MonoBehaviour
        yield return new WaitForSeconds(time_wait_jum);
        
         can_jum = true;
+    }
+    void jum_gravity()
+    {
+        if (e_rigd.velocity.y < -0.01)
+        {
+            e_rigd.gravityScale = 1.5f;
+        }
+        else {
+            e_rigd.gravityScale = 1.3f;   
+
+                }
     }
 }
