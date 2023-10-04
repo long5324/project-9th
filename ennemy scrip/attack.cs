@@ -1,73 +1,88 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Security.Cryptography;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
 public class attack : MonoBehaviour
 {
+    [SerializeField] LayerMask threatLayer, maplayer;
+    [SerializeField] Vector2 boxSize, attackDistance;
+    [SerializeField] float attackSpeed, attackairDistance;
 
-    [SerializeField] LayerMask threa_layer;
-    [SerializeField] Vector2 size_box, distance;
-    [SerializeField] float Speed_attack;
-    bool is_click,can_attack;
+    bool isClick;
+    public bool IsHit { get; private set; }
+    public bool CanAttack { get; private set; }
+    movement enemyMovement;
 
-    public bool is_hit  { get; set; }
-    movement enemy_movement;
     private void Start()
     {
-        is_hit = false;
-        can_attack = true;
-        enemy_movement = GetComponent<movement>();
+        IsHit = false;
+        CanAttack = true;
+        enemyMovement = GetComponent<movement>();
     }
-    public void attack1(InputAction.CallbackContext context)
-    {
-        if (context.action.ReadValue<float>() !=1)
-        {
-            is_click=false;
-        }
-        else
-        {
-            is_click = true;
-        }
-    }
-    bool Check_threat()
-    {
-        if (Physics2D.BoxCast(transform.position+ transform.right*distance.x*transform.localScale.x+transform.up*distance.y,size_box , 0f, Vector2.left, 0f, threa_layer))
-          return true;
-        else return false;
 
-    }
-    private void OnDrawGizmos()
-    {
-       Gizmos.color = UnityEngine.Color.yellow;
-       Gizmos.DrawWireCube(transform.position + transform.right * distance.x * transform.localScale.x + transform.up * distance.y, size_box);
-    }
-    // Update is called once per frame
     void Update()
     {
-        if (is_click && can_attack)
+        if (isClick && CanAttack)
         {
-            can_attack = false;
-            is_hit = true;
+            if (enemyMovement.GroundCheck())
+            {
+                CanAttack = false;
+                IsHit = true;
+            }
         }
-        
-        if (is_hit)
+
+        if (IsHit)
         {
-            Check_threat();
+            CheckThreat();
         }
+
+        Debug.Log(check_air_attack());
     }
-    public void wait_time_hellper()
+
+    public void Attack1(InputAction.CallbackContext context)
     {
-        
-        StartCoroutine(wait_attack());
+        isClick = context.action.ReadValue<float>() == 1;
     }
-    private IEnumerator wait_attack()
+
+    bool CheckThreat()
     {
-        yield return new WaitForSeconds(Speed_attack);
-        can_attack = true;
-        Debug.Log("pl");
+        if (Physics2D.OverlapBox(
+            transform.position + transform.right * attackDistance.x * transform.localScale.x + transform.up * attackDistance.y,
+            boxSize, 0f, threatLayer))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = UnityEngine.Color.yellow;
+        Gizmos.DrawWireCube(
+            transform.position + transform.right * attackDistance.x * transform.localScale.x + transform.up * attackDistance.y,
+            boxSize);
+        Gizmos.DrawLine(transform.position, (Vector2)transform.position+Vector2.down*attackairDistance);
+    }
+    bool check_air_attack()
+    {
+        if (Physics2D.Raycast(transform.position, Vector2.down,attackairDistance,maplayer) )
+        {
+            return true;
+        }
+        return false;
+    }
+
+   
+    public void WaitTimeHelper()
+    {
+        IsHit = false;
+        StartCoroutine(WaitAttack());
+    }
+
+    private IEnumerator WaitAttack()
+    {
+        yield return new WaitForSecondsRealtime(attackSpeed);
+        CanAttack = true;
     }
 }

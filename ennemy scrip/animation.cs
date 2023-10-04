@@ -1,132 +1,179 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Unity.Mathematics;
-using UnityEditor.Animations;
+using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class animation : MonoBehaviour
 {
-    [SerializeField] Animator sword_effect, run_effect, jump_effect;
-    [SerializeField] float time_can_combo=0.5f;
-    
-    attack enemy_attack;
-    movement movement_enemy;
-    Animator animator_enemy;
-    public float step_wait { get; set; }
-    float attack_nb;
-   public bool start_load { get; set; }
+    [SerializeField] Animator swordEffect;
+    [SerializeField] float timeCanCombo = 0.5f;
+    [SerializeField] float timeActiveEffectRun;
+    [SerializeField] GameObject effectRun;
+    [SerializeField] GameObject jumpEffect, fallEffect;
+
+    attack enemyAttack;
+    movement movementEnemy;
+    Animator animatorEnemy;
+
+    float attackNb;
+    bool checkOnEffect = false, checkOnEffectFall = false;
+
     private void Start()
     {
-        step_wait = time_can_combo;
-        enemy_attack = GetComponentInParent<attack>();
-        movement_enemy = GetComponentInParent<movement>();
-        animator_enemy = GetComponent<Animator>();
+        attackNb = 0;
+        stepWait = timeCanCombo;
+        enemyAttack = GetComponentInParent<attack>();
+        movementEnemy = GetComponentInParent<movement>();
+        animatorEnemy = GetComponent<Animator>();
     }
+
     private void LateUpdate()
     {
-        // effct run
-        set_run_effect();
-        //effect jump
-        set_jum_effect();
+        // Set run effect
+        SetRunEffect();
 
-        animator_enemy.SetBool("attack", enemy_attack.is_hit);
-        sword_effect.SetBool("attack1", animator_enemy.GetBool("attack1"));
-        sword_effect.SetBool("attack2", animator_enemy.GetBool("attack2"));
-        sword_effect.SetBool("attack3", animator_enemy.GetBool("attack3"));
+        // Set jump effect
+        SetJumpEffect();
 
-        if (animator_enemy.GetBool("buttun_jump") && animator_enemy.GetBool("attack"))
-        {
-            if((movement_enemy.e_rigd.velocity.y < 2 && movement_enemy.e_rigd.velocity.y > 0)||( movement_enemy.e_rigd.velocity.y < -5 && movement_enemy.e_rigd.velocity.y > -7))
-            animator_enemy.SetBool("attack4", true);
-            attack_nb = 4;
-        }
+        // Set fall effect
+        FallEffect();
 
-        if (animator_enemy.GetBool("attack") && attack_nb ==0&&! animator_enemy.GetBool("buttun_jump"))
-        {
-            attack_nb = 1;
-            animator_enemy.SetBool("attack1", true);
-        }
-        animator_enemy.SetFloat("velocityy", movement_enemy.e_rigd.velocity.y);
-        animator_enemy.SetFloat("velocityx", Math.Abs(movement_enemy.e_rigd.velocity.x));
-        if (movement_enemy.groundCheck()&&animator_enemy.GetBool("buttun_jump")==true&& movement_enemy.e_rigd.velocity.y <0.1 )
-        {
-            animator_enemy.SetBool("buttun_jump", false);
-        }
-        
-        if (start_load)
-        {
-            step_wait -= Time.deltaTime;
-        }
-        if (step_wait > 0 && step_wait < time_can_combo && enemy_attack.is_hit == true)
-        {
-            
-            
-            if (attack_nb == 1)
-            {
-                animator_enemy.SetBool("attack2", true);
-                start_load = false;
-                step_wait = time_can_combo;
-                attack_nb = 2;
-            }
-            else if (attack_nb == 2)
-            {
-                animator_enemy.SetBool("attack3", true);
-                start_load = false;
-                step_wait = time_can_combo;
-                attack_nb = 3;
-            }
-            else if (attack_nb == 3)
-            {
-                animator_enemy.SetBool("attack1", true);
-                start_load = false;
-                step_wait = time_can_combo;
-                attack_nb = 0;
-            }
-            else if(attack_nb == 4&& step_wait > time_can_combo-0.1)
-            {
-                animator_enemy.SetBool("attack5", true);
-                start_load = false;
-                step_wait = time_can_combo;
-            }
-        }
-        else if (step_wait <= 0)
-        {
-            attack_nb = 0;
-            step_wait = time_can_combo;
-            start_load = false;
-            set_all_attack_false();
-        }
+        // Set jump
+        SetJump();
+
+        // Set velocity animation
+        animatorEnemy.SetFloat("velocityy", movementEnemy.eRigidbody.velocity.y);
+        animatorEnemy.SetFloat("velocityx", Mathf.Abs(movementEnemy.eRigidbody.velocity.x));
+        animatorEnemy.SetBool("attack", enemyAttack.IsHit);
+        swordEffect.SetBool("attack1", animatorEnemy.GetBool("attack1"));
+        swordEffect.SetBool("attack2", animatorEnemy.GetBool("attack2"));
+        swordEffect.SetBool("attack3", animatorEnemy.GetBool("attack3"));
+
+        AttackCombo();
     }
+
     private void Update()
     {
-        // attack effect
+        // Set jump
+        if (Mathf.Abs(movementEnemy.eRigidbody.velocity.y) > 0.1f)
+        {
+            animatorEnemy.SetBool("buttun_jump", true);
+        }
+    }
 
+    public void SetAllAttackFalse()
+    {
+        startLoad = true;
+        animatorEnemy.SetBool("attack2", false);
+        animatorEnemy.SetBool("attack1", false);
+        animatorEnemy.SetBool("attack3", false);
+        animatorEnemy.SetBool("attack4", false);
+        animatorEnemy.SetBool("attack5", false);
+    }
+
+    private void AttackCombo()
+    {
+        if (animatorEnemy.GetBool("attack") && attackNb == 0 && !animatorEnemy.GetBool("buttun_jump"))
+        {
+            attackNb = 1;
+            animatorEnemy.SetBool("attack1", true);
+        }
+        else if (startLoad)
+        {
+            stepWait -= Time.deltaTime;
+        }
+
+        if (stepWait > 0 && stepWait < timeCanCombo && enemyAttack.IsHit)
+        {
+            if (attackNb == 1)
+            {
+                animatorEnemy.SetBool("attack2", true);
+                startLoad = false;
+                stepWait = timeCanCombo;
+                attackNb = 2;
+            }
+            else if (attackNb == 2)
+            {
+                animatorEnemy.SetBool("attack3", true);
+                startLoad = false;
+                stepWait = timeCanCombo;
+                attackNb = 3;
+            }
+            else if (attackNb == 3)
+            {
+                animatorEnemy.SetBool("attack1", true);
+                startLoad = false;
+                stepWait = timeCanCombo;
+                attackNb = 0;
+            }
+            else if (attackNb == 4 && stepWait > timeCanCombo - 0.1f)
+            {
+                animatorEnemy.SetBool("attack5", true);
+                startLoad = false;
+                stepWait = timeCanCombo;
+            }
+        }
+        else if (stepWait <= 0)
+        {
+            attackNb = 0;
+            stepWait = timeCanCombo;
+            startLoad = false;
+            SetAllAttackFalse();
+        }
+    }
+
+    private float stepWait;
+    private bool startLoad;
+
+    private void SetJumpEffect()
+    {
+        if (!checkOnEffect && animatorEnemy.GetFloat("velocityy") == movementEnemy.forceJump)
+        {
+            checkOnEffect = true;
+            SpawnEffect(jumpEffect, gameObject.transform.position -  new Vector3(0f,0.1f));
+        }
+        else if (animatorEnemy.GetFloat("velocityy") != movementEnemy.forceJump)
+        {
+            checkOnEffect = false;
+        }
+    }
+
+    private void FallEffect()
+    {
+        if (!checkOnEffectFall && movementEnemy.GroundCheck() && animatorEnemy.GetFloat("velocityy") < -10f)
+        {
+            checkOnEffectFall = true;
+            SpawnEffect(fallEffect, gameObject.transform.position);
+        }
+        else if (!movementEnemy.GroundCheck())
+        {
+            checkOnEffectFall = false;
+        }
+    }
+
+    private void SetRunEffect()
+    {
+        if (animatorEnemy.GetFloat("velocityx") == movementEnemy.get_target_speed_move())
+        {
+            effectRun.SetActive(true);
+        }
+        else
+        {
+            effectRun.SetActive(false);
+        }
         
-        // attack combo
-
-       
-        // set jump
-        if (math.abs(movement_enemy.e_rigd.velocity.y) > 0.1) animator_enemy.SetBool("buttun_jump", true);
-    }
-    public void set_all_attack_false()
-    {
-        animator_enemy.SetBool("attack2", false);
-        animator_enemy.SetBool("attack1", false);
-        animator_enemy.SetBool("attack3", false);
-        animator_enemy.SetBool("attack4", false);
-        animator_enemy.SetBool("attack5", false);
-    }
-    
-    void set_jum_effect()
-    {
-        jump_effect.SetFloat("velocity y", movement_enemy.e_rigd.velocity.y);
-    }
-    void set_run_effect()
-    {
-        run_effect.SetFloat("run", math.abs(movement_enemy.e_rigd.velocity.x));
     }
 
+    private void SetJump()
+    {
+        if (movementEnemy.GroundCheck() && animatorEnemy.GetBool("buttun_jump") == true && movementEnemy.eRigidbody.velocity.y < 0.1f)
+        {
+            animatorEnemy.SetBool("buttun_jump", false);
+        }
+    }
+
+    private void SpawnEffect(GameObject a,  Vector2 pos)
+    {
+        Instantiate(a, pos, Quaternion.identity, null);
+    }
 }
