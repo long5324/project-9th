@@ -16,6 +16,7 @@ public class movement : MonoBehaviour
     [SerializeField] float speedMoveIfJump;
     [SerializeField] float time_after_accleration = 1;
     [SerializeField] float time_end_accleration = 0.3f;
+    
     bool start_accleration = false;
     float step_cound;
     float step_cound_end;
@@ -27,12 +28,15 @@ public class movement : MonoBehaviour
     public float Horizontal { get; set; }
 
     bool faceLook = true;
-    bool canJump = true;
+    public bool canJump { get;set; }
+    public bool canMove { get;set; }
 
     attack enemyAttack;
 
     void Start()
     {
+        canMove = true;
+        canJump = true;
         enemyAttack = GetComponent<attack>();
         eRigidbody = GetComponent<Rigidbody2D>();
     }
@@ -40,12 +44,11 @@ public class movement : MonoBehaviour
     private void FixedUpdate()
     {
         MovePlayerController();
-        HandleJumpGravity();
+      /*  HandleJumpGravity();*/
         if (Horizontal > 0 && !faceLook)
             Flip();
         else if (Horizontal < 0 && faceLook)
-            Flip();
-
+            Flip();;
        
     }
     
@@ -92,33 +95,33 @@ public class movement : MonoBehaviour
         yield return new WaitForSeconds(timeWaitJump);
         canJump = true;
     }
-    void HandleJumpGravity()
-    {
-        eRigidbody.gravityScale = eRigidbody.velocity.y < -0.01f ? 1.5f : 1.3f;
-    }
+   
 
     bool start_cound;
     void MovePlayerController()
     {
-        if (enemyAttack.IsHit) { 
-            eRigidbody.velocity = new Vector2(0f, eRigidbody.velocity.y);
+        if (!canMove)
+        {
+            eRigidbody.velocity = new Vector2(0, eRigidbody.velocity.y);
+            return;
         }
-        else if (math.abs(eRigidbody.velocity.y) > 0.1)
+           
+         if (math.abs(eRigidbody.velocity.y) > 0.1)
         {
             eRigidbody.velocity = new Vector2(Horizontal * speedMoveIfJump, eRigidbody.velocity.y);
         }
-        else 
+        else
         {
             if (!start_accleration)
             {
                 eRigidbody.velocity = new Vector2(Horizontal * speedMovement, eRigidbody.velocity.y);
-                if(Horizontal!=0)
-                start_cound=true;
+                if (Horizontal != 0)
+                    start_cound = true;
                 else
                 {
                     start_cound = false;
                     step_cound = 0;
-                } 
+                }
 
             }
             else
